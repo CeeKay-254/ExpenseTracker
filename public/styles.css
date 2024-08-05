@@ -1,0 +1,134 @@
+/* Header and Navigation */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #663399;
+    color: #fff;
+  }
+  
+  nav ul {
+    display: flex;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  nav li {
+    margin-left: 20px;
+  }
+  
+  nav a {
+    color: #fff;
+    text-decoration: none;
+  }
+  
+  nav a i {
+    margin-right: 5px;
+  }
+  
+  /* Hero Section */
+  #hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background-color: #f4f4f4;
+  }
+  
+  .hero-content {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .info-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 20px;
+  }
+  
+  .info-block a {
+    color: #663399;
+    text-decoration: none;
+  }
+  
+  .info-block i {
+    font-size: 24px;
+    margin-bottom: 5px;
+    color: #663399;
+  }
+  
+  .hero-image img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Forms Section */
+  #forms {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+  }
+  
+  .form-container {
+    width: 300px;
+    margin: 0 20px;
+  }
+  
+  .form-container h2 {
+    color: #663399;
+  }
+  
+  .form-container input,
+  .form-container button {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #663399;
+    border-radius: 4px;
+  }
+  
+  .form-container button {
+    background-color: #663399;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  /* Contact Section */
+  #contact {
+    padding: 40px;
+    background-color: #f4f4f4;
+  }
+  
+  #contact h2 {
+    color: #663399;
+  }
+  
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .contact-info p {
+    margin: 10px 0;
+    color: #663399;
+  }
+  
+  .contact-info i {
+    margin-right: 5px;
+    color: #663399;
+  }
+  
+  /* Footer */
+  footer {
+    background-color: #663399;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+  }

@@ -93,7 +93,7 @@
   <body>
     <div class="register-container">
       <h1>Register</h1>
-      <form action="/register" method="POST" onsubmit="showPopup()">
+      <form action="/register" method="POST">
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required />
 
@@ -115,6 +115,35 @@
     </div>
 
     <script>
+      document.querySelector('form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const jsonData = {};
+        formData.forEach((value, key) => {
+          jsonData[key] = value;
+        });
+
+        fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonData)
+        })
+        .then(response => {
+          if (response.ok) {
+            showPopup();
+          } else {
+            alert('Error registering user');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error registering user');
+        });
+      });
+
       function showPopup() {
         var popup = document.getElementById("popup");
         popup.style.display = "block";

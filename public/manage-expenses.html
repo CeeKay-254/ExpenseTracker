@@ -11,7 +11,7 @@
     }
 
     .header {
-      background-color: #4CAF50; /* Green color */
+      background-color: #006400; /* Green color */
       color: white;
       padding: 15px;
       text-align: center;
@@ -71,7 +71,7 @@
       border: 1px solid #ddd;
     }
 
-    .form-container button {
+    .form-container button, .delete-button, .generate-report-button {
       background-color: #45a049;
       color: white;
       border: none;
@@ -80,7 +80,7 @@
       border-radius: 4px;
     }
 
-    .form-container button:hover {
+    .form-container button:hover, .delete-button:hover, .generate-report-button:hover {
       background-color: #388e3c;
     }
 
@@ -103,21 +103,23 @@
       background-color: #f4f4f4;
     }
 
-    .delete-button {
-      background-color: #f44336;
+    .generate-report-button {
+      background-color: #004d00;
       color: white;
-      border: none;
-      padding: 5px 10px;
-      cursor: pointer;
-      border-radius: 4px;
+      padding: 10px 20px;
+      margin-top: 20px;
+      display: block;
+      text-align: center;
+      width: 100%;
+      text-decoration: none;
     }
 
-    .delete-button:hover {
-      background-color: #d32f2f;
+    .generate-report-button:hover {
+      background-color: #003d00;
     }
 
     .footer {
-      background-color: #4CAF50; /* Green color */
+      background-color: #004d00; /* Green color */
       color: white;
       padding: 15px;
       text-align: center;
@@ -170,6 +172,7 @@
           <!-- Expense rows will be inserted here -->
         </tbody>
       </table>
+      <a href="/report.html" class="generate-report-button">Generate Report</a>
     </div>
   </div>
 
@@ -209,7 +212,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ userId, description, amount, date, category })
+          body: JSON.stringify({ description, amount, date, category })
         });
 
         const data = await response.json();

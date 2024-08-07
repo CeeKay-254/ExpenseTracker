@@ -1,15 +1,19 @@
+require('dotenv').config();
 const express = require('express');
 const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+const cookieParser = require('cookie-parser'); // Add this line
 const app = express();
 const port = process.env.PORT || 3000;
 
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'Genny@800',
-  database: 'expense_tracker'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 
 connection.connect((err) => {
@@ -20,8 +24,44 @@ connection.connect((err) => {
   console.log('Connected to MySQL database!');
 });
 
+const sessionStore = new MySQLStore({}, connection);
+
+app.use(cookieParser()); // Add this line
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  key: 'user_sid',
+  secret: 'your_secret_key', // Change this to your secret key
+  resave: false,
+  saveUninitialized: false,
+  store: sessionStore,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 // 1 day
+  }
+}));
+
+app.use((req, res, next) => {
+  if (req.cookies && req.cookies.user_sid && !req.session.user) {
+    res.clearCookie('user_sid');
+  }
+  next();
+});
+
+const sessionChecker = (req, res, next) => {
+  if (req.session.user && req.cookies.user_sid) {
+    res.redirect('/manage-expenses.html');
+  } else {
+    next();
+  }
+};
+
+const ensureAuthenticated = (req, res, next) => {
+  if (req.session.user && req.cookies.user_sid) {
+    next();
+  } else {
+    res.redirect('/login.html');
+  }
+};
 
 // Serve static files from the "public" directory
 app.use(express.static('public'));
@@ -77,18 +117,8 @@ app.post('/login', async (req, res) => {
       const isValidPassword = await bcrypt.compare(password, user.password);
 
       if (isValidPassword) {
-        const ipAddress = req.ip;
-
-        const loginQuery = 'INSERT INTO login_history (user_id, ip_address) VALUES (?, ?)';
-        connection.query(loginQuery, [user.id, ipAddress], (err) => {
-          if (err) {
-            console.error('Error recording login history:', err);
-            return res.status(500).json({ success: false, message: 'Error recording login history' });
-          }
-
-          console.log('Login history recorded successfully.');
-          res.status(200).json({ success: true, message: 'Login successful' });
-        });
+        req.session.user = { id: user.id }; // Save user id in session
+        res.status(200).json({ success: true, message: 'Login successful' });
       } else {
         res.status(401).json({ success: false, message: 'Invalid username or password' });
       }
@@ -99,16 +129,33 @@ app.post('/login', async (req, res) => {
   });
 });
 
+// Logout route
+app.get('/logout', (req, res) => {
+  if (req.session.user && req.cookies.user_sid) {
+    res.clearCookie('user_sid');
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error during logout:', err);
+        return res.status(500).json({ success: false, message: 'Logout error' });
+      }
+      res.redirect('/login.html');
+    });
+  } else {
+    res.redirect('/login.html');
+  }
+});
+
 // Serve the main page
-app.get('/', (req, res) => {
+app.get('/', sessionChecker, (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
 // Route to add an expense
-app.post('/expenses', (req, res) => {
-  const { userId, description, amount, date, category } = req.body;
+app.post('/expenses', ensureAuthenticated, (req, res) => {
+  const { description, amount, date, category } = req.body;
+  const userId = req.session.user.id;
 
-  if (!userId || !description || !amount || !date || !category) {
+  if (!description || !amount || !date || !category) {
     return res.status(400).json({ success: false, message: 'All fields are required' });
   }
 
@@ -124,13 +171,13 @@ app.post('/expenses', (req, res) => {
 });
 
 // Route to get expenses for a specific user
-app.get('/expenses/:userId', (req, res) => {
+app.get('/expenses/:userId', ensureAuthenticated, (req, res) => {
   const userId = req.params.userId;
   const query = 'SELECT * FROM expenses WHERE user_id = ?';
   connection.query(query, [userId], (err, results) => {
     if (err) {
       console.error('Error fetching expenses:', err);
-      res.status(500).json({ message: 'Error fetching expenses' });
+      res.status(500).json({ success: false, message: 'Error fetching expenses' });
     } else {
       res.status(200).json(results);
     }
@@ -138,15 +185,19 @@ app.get('/expenses/:userId', (req, res) => {
 });
 
 // Route to delete an expense
-app.delete('/expenses/:id', (req, res) => {
+app.delete('/expenses/:id', ensureAuthenticated, (req, res) => {
   const expenseId = req.params.id;
-  const query = 'DELETE FROM expenses WHERE id = ?';
-  connection.query(query, [expenseId], (err, result) => {
+  const userId = req.session.user.id;
+
+  const query = 'DELETE FROM expenses WHERE id = ? AND user_id = ?';
+  connection.query(query, [expenseId, userId], (err, result) => {
     if (err) {
       console.error('Error deleting expense:', err);
-      res.status(500).json({ message: 'Error deleting expense' });
+      res.status(500).json({ success: false, message: 'Error deleting expense' });
+    } else if (result.affectedRows === 0) {
+      res.status(404).json({ success: false, message: 'Expense not found or not authorized' });
     } else {
-      res.status(200).json({ message: 'Expense deleted successfully' });
+      res.status(200).json({ success: true, message: 'Expense deleted successfully' });
     }
   });
 });

@@ -6,7 +6,9 @@
 </head>
 <body>
   <header>
-    <h1>Expense Tracker</h1>
+    <h1>
+      Expense Tracker
+    </h1>
     <nav>
       <ul>
         <li><a href="login.html">Log In</a></li>
@@ -22,7 +24,7 @@
       <div class="hero-content">
         <h1>Welcome to Expense Tracker</h1>
         <p>Effortlessly manage your expenses and stay on top of your financial goals.</p>
-        <a href="manage-expense.html" class="cta-button">Get Started</a>
+        <a href="registration.html" class="cta-button">Get Started</a>
       </div>
     </section>
 
@@ -30,12 +32,12 @@
     <section class="features">
       <h2>Features</h2>
       <div class="feature">
-        <img src="icon1.png" alt="Track Your Spending">
+        <img src="track.png" alt="Track Your Spending">
         <h3>Track Your Spending</h3>
         <p>Monitor and categorize your expenses easily.</p>
       </div>
       <div class="feature">
-        <img src="icon3.png" alt="Generate Reports">
+        <img src="generate.png" alt="Generate Reports">
         <h3>Generate Reports</h3>
         <p>Get insights with detailed reports and charts.</p>
       </div>
@@ -54,7 +56,6 @@
       </div>
     </section>
 
-    
     <!-- Contact Section -->
     <section class="contact">
       <h2>Contact Us</h2>
@@ -89,6 +90,12 @@
     </div>
   </footer>
 
-  <script src="app.js"></script>
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', function(event) {
+      event.preventDefault(); // Prevent the default form submission
+      this.querySelector('button').textContent = 'Message Sent';
+      this.reset(); // Reset the form fields
+    });
+  </script>
 </body>
 </html>

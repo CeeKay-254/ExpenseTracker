@@ -1,6 +1,8 @@
 // Get the login and register form elements
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
+const expenseForm = document.getElementById('expenseForm');
+const expenseList = document.getElementById('expenseList');
 
 // Add event listeners for form submissions
 loginForm.addEventListener('submit', async (event) => {
@@ -17,6 +19,13 @@ registerForm.addEventListener('submit', async (event) => {
   }
 });
 
+expenseForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (validateExpenseForm()) {
+    await handleAddExpense();
+  }
+});
+
 // Function to handle login
 async function handleLogin() {
   const loadingIndicator = showLoadingIndicator();
@@ -24,11 +33,9 @@ async function handleLogin() {
   const password = document.getElementById('password').value;
 
   try {
-    const response = await fetch('/login', { // Updated endpoint to match server route
+    const response = await fetch('/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
 
@@ -37,14 +44,14 @@ async function handleLogin() {
     if (response.ok) {
       showSuccessMessage(data.message);
       setTimeout(() => {
-        window.location.href = '/'; // Redirect to the main page or another page upon successful login
+        window.location.href = '/'; // Redirect on successful login
       }, 2000); // 2 seconds delay
     } else {
       showErrorMessage(`Login failed: ${data.message}`);
     }
   } catch (error) {
-    console.error('Error:', error);
-    showErrorMessage('An error occurred. Please try again later.');
+    console.error('Login error:', error);
+    showErrorMessage('An error occurred during login. Please try again later.');
   } finally {
     hideLoadingIndicator(loadingIndicator);
   }
@@ -55,14 +62,12 @@ async function handleRegister() {
   const loadingIndicator = showLoadingIndicator();
   const username = document.getElementById('newUsername').value;
   const password = document.getElementById('newPassword').value;
-  const email = document.getElementById('email').value; // Added email field for registration
+  const email = document.getElementById('email').value;
 
   try {
-    const response = await fetch('/register', { // Updated endpoint to match server route
+    const response = await fetch('/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password, email })
     });
 
@@ -74,8 +79,98 @@ async function handleRegister() {
       showErrorMessage(`Registration failed: ${data.message}`);
     }
   } catch (error) {
-    console.error('Error:', error);
-    showErrorMessage('An error occurred. Please try again later.');
+    console.error('Registration error:', error);
+    showErrorMessage('An error occurred during registration. Please try again later.');
+  } finally {
+    hideLoadingIndicator(loadingIndicator);
+  }
+}
+
+// Function to handle adding an expense
+async function handleAddExpense() {
+  const loadingIndicator = showLoadingIndicator();
+  const description = document.getElementById('description').value;
+  const amount = document.getElementById('amount').value;
+  const date = document.getElementById('date').value;
+  const category = document.getElementById('category').value;
+
+  try {
+    const response = await fetch('/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description, amount, date, category })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showSuccessMessage(data.message);
+      await loadExpenses(); // Reload expenses after adding
+    } else {
+      showErrorMessage(`Error adding expense: ${data.message}`);
+    }
+  } catch (error) {
+    console.error('Error adding expense:', error);
+    showErrorMessage('An error occurred while adding the expense. Please try again later.');
+  } finally {
+    hideLoadingIndicator(loadingIndicator);
+  }
+}
+
+// Function to load expenses
+async function loadExpenses() {
+  const userId = document.getElementById('userId').value; // Assume userId is available in your form
+  try {
+    const response = await fetch(`/expenses/${userId}`);
+    const expenses = await response.json();
+
+    if (response.ok) {
+      renderExpenses(expenses);
+    } else {
+      showErrorMessage('Failed to load expenses.');
+    }
+  } catch (error) {
+    console.error('Error loading expenses:', error);
+    showErrorMessage('An error occurred while loading expenses. Please try again later.');
+  }
+}
+
+// Function to render expenses
+function renderExpenses(expenses) {
+  expenseList.innerHTML = ''; // Clear the list first
+  expenses.forEach(expense => {
+    const expenseItem = document.createElement('li');
+    expenseItem.textContent = `${expense.description} - ${expense.amount} - ${expense.date} - ${expense.category}`;
+    
+    // Add delete button
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', () => handleDeleteExpense(expense.id));
+    expenseItem.appendChild(deleteButton);
+
+    expenseList.appendChild(expenseItem);
+  });
+}
+
+// Function to handle deleting an expense
+async function handleDeleteExpense(expenseId) {
+  const loadingIndicator = showLoadingIndicator();
+  try {
+    const response = await fetch(`/expenses/${expenseId}`, {
+      method: 'DELETE'
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showSuccessMessage(data.message);
+      await loadExpenses(); // Reload expenses after deletion
+    } else {
+      showErrorMessage(`Error deleting expense: ${data.message}`);
+    }
+  } catch (error) {
+    console.error('Error deleting expense:', error);
+    showErrorMessage('An error occurred while deleting the expense. Please try again later.');
   } finally {
     hideLoadingIndicator(loadingIndicator);
   }
@@ -87,9 +182,7 @@ function showSuccessMessage(message) {
   successMessage.classList.add('success-message');
   successMessage.textContent = message;
   document.body.appendChild(successMessage);
-  setTimeout(() => {
-    successMessage.remove();
-  }, 3000);
+  setTimeout(() => successMessage.remove(), 3000);
 }
 
 // Function to display an error message
@@ -98,9 +191,7 @@ function showErrorMessage(message) {
   errorMessage.classList.add('error-message');
   errorMessage.textContent = message;
   document.body.appendChild(errorMessage);
-  setTimeout(() => {
-    errorMessage.remove();
-  }, 3000);
+  setTimeout(() => errorMessage.remove(), 3000);
 }
 
 // Add dynamic styles for success and error messages
@@ -174,72 +265,17 @@ function validateRegisterForm() {
   }
   return true;
 }
-<script>
-  // Function to update the pie chart
-  function updateChart(expenses) {
-    const ctx = document.getElementById('expensesChart').getContext('2d');
-    const labels = expenses.map(expense => expense.category);
-    const data = expenses.map(expense => expense.amount);
 
-    const chart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Expenses by Category',
-          data: data,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(255, 206, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(255, 159, 64, 0.2)'
-          ],
-          borderColor: [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)'
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                let label = context.label || '';
-                if (context.parsed !== null) {
-                  label += ': ' + context.parsed + ' units';
-                }
-                return label;
-              }
-            }
-          }
-        }
-      }
-    });
+// Function to validate expense form
+function validateExpenseForm() {
+  const description = document.getElementById('description').value;
+  const amount = document.getElementById('amount').value;
+  const date = document.getElementById('date').value;
+  const category = document.getElementById('category').value;
+
+  if (!description || !amount || !date || !category) {
+    showErrorMessage('Please fill in all fields.');
+    return false;
   }
-
-  // Example function to fetch data and update chart
-  async function fetchExpenses() {
-    try {
-      const response = await fetch(`/expenses/${userId}`);
-      const expenses = await response.json();
-      updateChart(expenses);
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
-    }
-  }
-
-  // Fetch expenses when the page loads
-  fetchExpenses();
-</script>
+  return true;
+}
